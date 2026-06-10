@@ -518,10 +518,10 @@ function finishTest() {
 
   // Feedback berdasarkan WPM
   const msgs = [
-    [60, "🔥 Luar biasa! Kamu ngebut banget!"],
-    [40, "👍 Bagus! Terus asah kecepatannya."],
-    [20, "💪 Lumayan! Fokus ke akurasi dulu."],
-    [0,  "🐢 Santai, latihan konsisten kuncinya!"],
+    [60, "Luar biasa! Kamu ngebut banget!"],
+    [40, "Bagus! Terus asah kecepatannya."],
+    [20, "Lumayan! Fokus ke akurasi dulu."],
+    [0,  "Santai, latihan konsisten kuncinya!"],
   ];
   // find() → cari elemen pertama yang lolos kondisi
   el.feedback.textContent = msgs.find(([min]) => wpm >= min)[1];
