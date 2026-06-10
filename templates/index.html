@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>Typing Speed Test</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --border:   #2a2d3a;
+      --accent:   #7c6aff;
+      --accent2:  #a78bfa;
+      --text:     #e2e4f0;
+      --muted:    #6b7280;
+      --green:    #34d399;
+      --yellow:   #fbbf24;
+      --red:      #f87171;
+      --font-mono: 'Times New Roman', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    /* ── Header ───────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    header h1 span { color: var(--accent2); }
+    header p { color: var(--muted); margin-top: 0.4rem; font-size: 0.9rem; }
+
+    /* ── Card ─────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 680px;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Level Selector ───────────────────────────────────────── */
+    .level-btns {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+    }
+    .level-btn {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+    .level-btn:hover { border-color: var(--accent); color: var(--text); }
+    .level-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ── Teks Target ──────────────────────────────────────────── */
+    #text-display {
+  font-family: var(--font-mono);
+  font-size: 1rem;        /* kecilkan sedikit biar muat */
+  line-height: 1.8;
+  letter-spacing: 0.3px;
+  padding: 1rem;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+  min-height: 80px;
+  user-select: none;
+  white-space: pre-wrap;  /* ← wrap teks panjang */
+  word-break: break-word; /* ← potong kalau kepanjangan */
+  overflow-wrap: anywhere;/* ← fallback extra */
+  overflow: hidden;       /* ← pastikan tidak meluber */
+}
+
+    /* Warna karakter saat user mengetik */
+    .char-correct { color: var(--green); }
+    .char-wrong   { color: var(--red); background: rgba(248,113,113,0.15); border-radius: 2px; }
+    .char-pending { color: var(--muted); }
+    .char-cursor  { border-left: 2px solid var(--accent2); animation: blink 1s step-end infinite; }
+
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    /* ── Input Area ───────────────────────────────────────────── */
+    #typing-input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      resize: none;
+    }
+    #typing-input:focus  { border-color: var(--accent); }
+    #typing-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Stats Bar ────────────────────────────────────────────── */
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .stat {
+      flex: 1;
+      min-width: 80px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--accent2);
+    }
+    .stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Tombol ───────────────────────────────────────────────── */
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* ── Result Panel ─────────────────────────────────────────── */
+    #result-panel {
+      display: none;
+      text-align: center;
+      padding: 0.5rem 0;
+    }
+    #result-panel.show { display: block; }
+    #result-wpm {
+      font-size: 3.5rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--accent2);
+    }
+    #result-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.8rem; }
+    .result-details {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .result-details span { color: var(--muted); }
+    .result-details strong { color: var(--text); }
+
+    /* ── Save Form ────────────────────────────────────────────── */
+    #save-form {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 320px;
+      margin: 0 auto 0.5rem;
+    }
+    #save-form input {
+      flex: 1;
+      padding: 0.6rem 0.8rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+    #save-form input:focus { border-color: var(--accent); }
+
+    /* ── Leaderboard ──────────────────────────────────────────── */
+    .lb-tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .lb-tab {
+      padding: 0.35rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    .lb-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .lb-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .lb-table th {
+      text-align: left;
+      padding: 0.4rem 0.5rem;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+    .lb-table td { padding: 0.5rem 0.5rem; border-bottom: 1px solid var(--border); }
+    .lb-table tr:last-child td { border-bottom: none; }
+    .lb-rank { color: var(--muted); width: 30px; }
+    .lb-wpm  { color: var(--accent2); font-family: var(--font-mono); font-weight: 700; }
+    .lb-acc  { color: var(--green); font-family: var(--font-mono); }
+
+    #lb-empty { text-align: center; color: var(--muted); padding: 1.5rem; font-size: 0.9rem; }
+
+    /* ── Feedback msg ─────────────────────────────────────────── */
+    #feedback { 
+      text-align: center; 
+      font-size: 1.1rem; 
+      margin: 0.5rem 0; 
+      min-height: 1.5rem; 
+    }
+
+    /* ── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.5rem; }
+      #result-wpm { font-size: 2.5rem; }
+      .stat-value { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Typing <span>Speed</span> Test</h1>
+  <p>Ukur kecepatan dan akurasi mengetik kamu</p>
+</header>
+
+<!-- ── Card: Test Area ─────────────────────────────────────────────────────── -->
+<div class="card" id="test-card">
+
+  <!-- Pilih Level -->
+  <div class="level-btns">
+    <button class="level-btn" data-level="easy">Easy</button>
+    <button class="level-btn active" data-level="medium">Medium</button>
+    <button class="level-btn" data-level="hard">Hard</button>
+  </div>
+
+  <!-- Teks Target dengan highlight karakter -->
+  <div id="text-display">Klik "Mulai" untuk memuat teks...</div>
+
+  <!-- Input Ketikan -->
+  <textarea
+    id="typing-input"
+    rows="3"
+    placeholder="Ketik di sini setelah klik Mulai..."
+    disabled
+  ></textarea>
+
+  <!-- Stats realtime -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value" id="stat-wpm">0</div>
+      <div class="stat-label">WPM</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-acc">100%</div>
+      <div class="stat-label">Akurasi</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-time">0s</div>
+      <div class="stat-label">Waktu</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-chars">0</div>
+      <div class="stat-label">Karakter ✓</div>
+    </div>
+  </div>
+
+  <!-- Tombol -->
+  <div class="btn-row">
+    <button class="btn btn-primary" id="btn-start">Mulai</button>
+    <button class="btn btn-outline" id="btn-reset">Reset</button>
+  </div>
+
+  <!-- Panel Hasil (muncul setelah selesai) -->
+  <div id="result-panel">
+    <hr style="border-color: var(--border); margin: 1.2rem 0;" />
+    <div id="result-wpm">0</div>
+    <div id="result-label">WPM</div>
+    <div id="feedback"></div>
+    <div class="result-details">
+      <div><span>Akurasi </span><strong id="res-acc">—</strong></div>
+      <div><span>Waktu </span><strong id="res-time">—</strong></div>
+      <div><span>Level </span><strong id="res-level">—</strong></div>
+    </div>
+    <!-- Form simpan skor -->
+    <div id="save-form">
+      <input type="text" id="input-name" placeholder="Nama kamu..." maxlength="20" />
+      <button class="btn btn-primary" id="btn-save" style="flex:0;padding:0.6rem 1rem;">Simpan</button>
+    </div>
+    <div id="save-msg" style="color:var(--green);font-size:0.85rem;min-height:1.2rem;"></div>
+  </div>
+</div>
+
+<!-- ── Card: Leaderboard ───────────────────────────────────────────────────── -->
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <strong>Leaderboard</strong>
+  </div>
+  <div class="lb-tabs">
+    <button class="lb-tab active" data-lb="easy">Easy</button>
+    <button class="lb-tab" data-lb="medium">Medium</button>
+    <button class="lb-tab" data-lb="hard">Hard</button>
+  </div>
+  <div id="lb-content">
+    <div id="lb-empty">Belum ada skor</div>
+  </div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// STATE — semua data app disimpan di satu object
+// ═══════════════════════════════════════════════════════════════════
+const state = {
+  targetText : "",       // teks yang harus diketik
+  level      : "medium", // level aktif
+  started    : false,    // apakah test sudah mulai
+  finished   : false,    // apakah test sudah selesai
+  startTime  : null,     // timestamp saat mulai (ms)
+  timerID    : null,     // ID interval timer
+  lbLevel    : "easy",  // tab leaderboard aktif
+  lastWpm    : 0,
+  lastAcc    : 0,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ELEMENT REFERENCES — ambil semua elemen DOM sekali di awal
+// ═══════════════════════════════════════════════════════════════════
+const el = {
+  display    : document.getElementById("text-display"),
+  input      : document.getElementById("typing-input"),
+  btnStart   : document.getElementById("btn-start"),
+  btnReset   : document.getElementById("btn-reset"),
+  statWpm    : document.getElementById("stat-wpm"),
+  statAcc    : document.getElementById("stat-acc"),
+  statTime   : document.getElementById("stat-time"),
+  statChars  : document.getElementById("stat-chars"),
+  resultPanel: document.getElementById("result-panel"),
+  resultWpm  : document.getElementById("result-wpm"),
+  feedback   : document.getElementById("feedback"),
+  resAcc     : document.getElementById("res-acc"),
+  resTime    : document.getElementById("res-time"),
+  resLevel   : document.getElementById("res-level"),
+  inputName  : document.getElementById("input-name"),
+  btnSave    : document.getElementById("btn-save"),
+  saveMsg    : document.getElementById("save-msg"),
+  lbContent  : document.getElementById("lb-content"),
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// API CALLS — komunikasi ke Flask backend
+// ═══════════════════════════════════════════════════════════════════
+
+// Ambil kata dari /api/words?level=...
+async function fetchWords(level) {
+  // fetch() → HTTP GET ke URL, return Promise
+  const res  = await fetch(`/api/words?level=${level}`);
+  // .json() → parse response body sebagai JSON, return Promise
+  const data = await res.json();
+  return data.text; // "the and cat dog ..."
+}
+
+// Kirim skor ke /api/score (POST)
+async function postScore(name, wpm, accuracy, level) {
+  const res = await fetch("/api/score", {
+    method : "POST",
+    // Headers wajib kalau kirim JSON body
+    headers: { "Content-Type": "application/json" },
+    // JSON.stringify() → konversi object JS ke string JSON
+    body   : JSON.stringify({ name, wpm, accuracy, level }),
+  });
+  return await res.json();
+}
+
+// Ambil leaderboard dari /api/leaderboard
+async function fetchLeaderboard() {
+  const res  = await fetch("/api/leaderboard");
+  return await res.json();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER TEKS — tampilkan karakter dengan warna sesuai status
+// ═══════════════════════════════════════════════════════════════════
+function renderText(typed) {
+  // Pecah target jadi array karakter
+  const chars = state.targetText.split("");
+
+  // map() → ubah setiap karakter jadi <span> dengan class yang sesuai
+  const html = chars.map((ch, i) => {
+    let cls = "char-pending"; // belum diketik
+
+    if (i < typed.length) {
+      // Sudah diketik — cek benar/salah
+      cls = typed[i] === ch ? "char-correct" : "char-wrong";
+    } else if (i === typed.length) {
+      // Posisi kursor saat ini
+      cls = "char-pending char-cursor";
+    }
+
+    // Escape spasi jadi &nbsp; supaya terlihat di HTML
+    const display = ch === " " ? "&nbsp;" : ch;
+    return `<span class="${cls}">${display}</span>`;
+  }).join("");
+
+  // innerHTML → set HTML langsung ke element
+  el.display.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HITUNG STATS
+// ═══════════════════════════════════════════════════════════════════
+function calcStats(typed) {
+  const elapsed = (Date.now() - state.startTime) / 1000; // detik
+  const minutes = elapsed / 60;
+
+  // Hitung karakter benar
+  let correct = 0;
+  for (let i = 0; i < typed.length; i++) {
+    if (typed[i] === state.targetText[i]) correct++;
+  }
+
+  const wpm = minutes > 0 ? Math.round((typed.length / 5) / minutes) : 0;
+  const acc = typed.length > 0
+    ? Math.round((correct / typed.length) * 100)
+    : 100;
+
+  return { wpm, acc, correct, elapsed };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UPDATE STATS BAR (realtime tiap detik + tiap ketukan)
+// ═══════════════════════════════════════════════════════════════════
+function updateStats(typed) {
+  const { wpm, acc, correct, elapsed } = calcStats(typed);
+  el.statWpm.textContent   = wpm;
+  el.statAcc.textContent   = acc + "%";
+  el.statTime.textContent  = Math.round(elapsed) + "s";
+  el.statChars.textContent = correct;
+  state.lastWpm = wpm;
+  state.lastAcc = acc;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SELESAI — tampilkan hasil
+// ═══════════════════════════════════════════════════════════════════
+function finishTest() {
+  if (state.finished) return;
+  state.finished = true;
+
+  // Hentikan timer interval
+  clearInterval(state.timerID);
+
+  const typed   = el.input.value;
+  const { wpm, acc, elapsed } = calcStats(typed);
+
+  el.input.disabled = true;
+  el.btnStart.textContent = "Mulai";
+  el.btnStart.disabled    = false;
+
+  // Tampilkan result panel
+  el.resultPanel.classList.add("show");
+  el.resultWpm.textContent  = wpm;
+  el.resAcc.textContent     = acc + "%";
+  el.resTime.textContent    = Math.round(elapsed) + "s";
+  el.resLevel.textContent   = state.level;
+
+  // Feedback berdasarkan WPM
+  const msgs = [
+    [60, "🔥 Luar biasa! Kamu ngebut banget!"],
+    [40, "👍 Bagus! Terus asah kecepatannya."],
+    [20, "💪 Lumayan! Fokus ke akurasi dulu."],
+    [0,  "🐢 Santai, latihan konsisten kuncinya!"],
+  ];
+  // find() → cari elemen pertama yang lolos kondisi
+  el.feedback.textContent = msgs.find(([min]) => wpm >= min)[1];
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// START TEST
+// ═══════════════════════════════════════════════════════════════════
+async function startTest() {
+  // Reset state
+  state.started  = false;
+  state.finished = false;
+  state.startTime = null;
+
+  el.resultPanel.classList.remove("show");
+  el.saveMsg.textContent    = "";
+  el.inputName.value        = "";
+  el.display.textContent    = "Memuat...";
+  el.input.value            = "";
+  el.input.disabled         = true;
+  el.btnStart.disabled      = true;
+  el.btnStart.textContent   = "...";
+
+  // Reset stats bar
+  el.statWpm.textContent   = "0";
+  el.statAcc.textContent   = "100%";
+  el.statTime.textContent  = "0s";
+  el.statChars.textContent = "0";
+
+  // Ambil kata dari backend
+  // await → tunggu sampai fetchWords selesai sebelum lanjut
+  state.targetText = await fetchWords(state.level);
+  renderText("");
+
+  el.input.disabled       = false;
+  el.input.focus();
+  el.btnStart.disabled    = false;
+  el.btnStart.textContent = "Mulai";
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EVENT LISTENERS — hubungkan DOM ke fungsi
+// ═══════════════════════════════════════════════════════════════════
+
+// Tombol Mulai / Retry
+el.btnStart.addEventListener("click", startTest);
+
+// Tombol Reset
+el.btnReset.addEventListener("click", () => {
+  clearInterval(state.timerID);
+  state.started  = false;
+  state.finished = false;
+  el.input.value    = "";
+  el.input.disabled = true;
+  el.resultPanel.classList.remove("show");
+  el.display.textContent = "Klik 'Mulai' untuk memuat teks...";
+  el.statWpm.textContent = el.statAcc.textContent = "0";
+  el.statTime.textContent = "0s";
+  el.statChars.textContent = "0";
+  el.btnStart.textContent = "Mulai";
+});
+
+// Input — event tiap kali user mengetik
+el.input.addEventListener("input", () => {
+  if (state.finished) return;
+  const typed = el.input.value;
+
+  // Mulai timer saat karakter pertama
+  if (!state.started && typed.length > 0) {
+    state.started   = true;
+    state.startTime = Date.now(); // timestamp ms
+
+    // setInterval → jalankan fungsi tiap 1000ms (1 detik)
+    state.timerID = setInterval(() => {
+      updateStats(el.input.value);
+    }, 1000);
+  }
+
+  renderText(typed);
+  updateStats(typed);
+
+  // Cek apakah sudah selesai (panjang sama dengan target)
+  if (typed.length >= state.targetText.length) {
+    finishTest();
+  }
+});
+
+// Level buttons
+document.querySelectorAll(".level-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    // Hapus class active dari semua tombol level
+    document.querySelectorAll(".level-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.level = btn.dataset.level; // ambil dari data-level="..."
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SAVE SCORE
+// ═══════════════════════════════════════════════════════════════════
+el.btnSave.addEventListener("click", async () => {
+  const name = el.inputName.value.trim();
+  if (!name) { el.saveMsg.textContent = "Isi nama dulu!"; return; }
+
+  el.btnSave.disabled = true;
+  el.saveMsg.textContent = "Menyimpan...";
+
+  const data = await postScore(name, state.lastWpm, state.lastAcc, state.level);
+  el.saveMsg.textContent = "✓ Skor disimpan!";
+  el.btnSave.disabled = false;
+
+  // Refresh leaderboard setelah simpan
+  renderLeaderboard(await fetchLeaderboard());
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// LEADERBOARD
+// ═══════════════════════════════════════════════════════════════════
+function renderLeaderboard(data) {
+  const entries = data[state.lbLevel] || [];
+
+  if (entries.length === 0) {
+    el.lbContent.innerHTML = `<div id="lb-empty">Belum ada skor untuk level ini</div>`;
+    return;
+  }
+
+  // Template literal multi-line untuk buat tabel HTML
+  const rows = entries.map((e, i) => `
+    <tr>
+      <td class="lb-rank">${i + 1}</td>
+      <td>${e.name}</td>
+      <td class="lb-wpm">${e.wpm}</td>
+      <td class="lb-acc">${e.accuracy}%</td>
+    </tr>
+  `).join("");
+
+  el.lbContent.innerHTML = `
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Nama</th><th>WPM</th><th>Akurasi</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+// Tab leaderboard
+document.querySelectorAll(".lb-tab").forEach(tab => {
+  tab.addEventListener("click", async () => {
+    document.querySelectorAll(".lb-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    state.lbLevel = tab.dataset.lb;
+    renderLeaderboard(await fetchLeaderboard());
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT — jalankan saat halaman pertama load
+// ═══════════════════════════════════════════════════════════════════
+(async () => {
+  renderLeaderboard(await fetchLeaderboard());
+})();
+</script>
+
+</body>
+</html>
+
